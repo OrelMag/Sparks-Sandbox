@@ -1,0 +1,27 @@
+{
+  "name": "spark-sandbox",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A wordless controller-literacy toy. The game is the means; controller literacy is the end.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "guard": "node scripts/guard.mjs",
+    "smoke": "node scripts/smoke.mjs",
+    "check": "npm run typecheck && npm run guard && npm run test"
+  },
+  "dependencies": {
+    "phaser": "^3.90.0"
+  },
+  "devDependencies": {
+    "playwright": "^1.61.1",
+    "typescript": "^5.7.3",
+    "vite": "^6.0.7",
+    "vitest": "^3.0.2"
+  }
+}
