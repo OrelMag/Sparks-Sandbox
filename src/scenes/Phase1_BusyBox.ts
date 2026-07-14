@@ -28,6 +28,7 @@ export class Phase1_BusyBox extends PhaseScene {
   private celebrated = false;
 
   protected buildPhase(): void {
+    this.celebrated = false;
     const cx = GAME_WIDTH / 2;
 
     // A friendly floor line.
@@ -38,6 +39,7 @@ export class Phase1_BusyBox extends PhaseScene {
     // Spark, stationary, front and center.
     this.spark = new Spark(this, cx, GAME_HEIGHT - 260);
     this.spark.setController(new StationaryController());
+    this.placeLevelExit(cx, GAME_HEIGHT - 320);
 
     // Four face-button toys along the bottom + a d-pad selector above.
     this.addInteractable(new Spring(this, 210, GAME_HEIGHT - 150));
@@ -75,6 +77,6 @@ export class Phase1_BusyBox extends PhaseScene {
       });
     }
     this.spark.hop(70);
-    this.goToHub();
+    this.unlockNextExit("P2_GearPen", "gear");
   }
 }

@@ -31,9 +31,11 @@ export class HubScene extends PhaseScene {
 
   private portals: Portal[] = [];
   private pedestals: Pedestal[] = [];
-  private transitioning = false;
 
   protected buildPhase(): void {
+    this.portals = [];
+    this.pedestals = [];
+
     // Soft playground floor.
     this.add
       .ellipse(GAME_WIDTH / 2, GAME_HEIGHT - 60, GAME_WIDTH * 0.9, 260, COLOR.floor, 0.3)
@@ -96,19 +98,9 @@ export class HubScene extends PhaseScene {
     // Drive into a door → enter that phase.
     for (const portal of this.portals) {
       if (portal.check(this.spark.x, this.spark.y)) {
-        this.enter(portal.sceneKey);
+        this.transitionTo(portal.sceneKey);
         break;
       }
     }
-  }
-
-  private enter(sceneKey: string): void {
-    this.transitioning = true;
-    this.services.audio.play("open");
-    this.spark?.pop(0.8);
-    this.cameras.main.fadeOut(350, 15, 16, 32);
-    this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
-      this.scene.start(sceneKey);
-    });
   }
 }

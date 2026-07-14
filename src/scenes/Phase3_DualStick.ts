@@ -41,6 +41,12 @@ export class Phase3_DualStick extends PhaseScene {
   private celebrated = false;
 
   protected buildPhase(): void {
+    this.blobs = [];
+    this.cleaned = 0;
+    this.aimUsed = false;
+    this.fireUsed = false;
+    this.celebrated = false;
+
     // A framed arena floor to make "fixed camera, this is the whole world" read.
     this.add
       .rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH - 60, GAME_HEIGHT - 60, COLOR.floor, 0.25)
@@ -49,6 +55,7 @@ export class Phase3_DualStick extends PhaseScene {
 
     this.spark = new Spark(this, GAME_WIDTH / 2, GAME_HEIGHT / 2);
     this.spark.setController(new TankController());
+    this.placeLevelExit(90, GAME_HEIGHT / 2);
     this.cannon = new WaterCannon(this);
 
     // Muddy objects to wash, scattered around the arena.
@@ -145,6 +152,6 @@ export class Phase3_DualStick extends PhaseScene {
       });
     }
     this.spark.pop(1);
-    this.goToHub();
+    this.unlockNextExit("P4_AutomationGates", "gears");
   }
 }

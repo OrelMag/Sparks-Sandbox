@@ -10,7 +10,7 @@ import Phaser from "phaser";
 import { COLOR, XBOX_BUTTON } from "@/config/Palette";
 import { drawGear } from "./Gear";
 
-export type PortalIcon = "buttons" | "gear" | "dualstick" | "gears";
+export type PortalIcon = "home" | "buttons" | "gear" | "dualstick" | "gears";
 
 export class Portal {
   readonly container: Phaser.GameObjects.Container;
@@ -49,6 +49,16 @@ export class Portal {
   private buildIcon(scene: Phaser.Scene, icon: PortalIcon): Phaser.GameObjects.Container {
     const c = scene.add.container(0, 0);
     switch (icon) {
+      case "home": {
+        const g = scene.add.graphics();
+        g.fillStyle(COLOR.metal, 1);
+        g.fillTriangle(-30, 0, 0, -28, 30, 0);
+        g.fillRoundedRect(-22, -2, 44, 34, 4);
+        g.fillStyle(COLOR.bgBottom, 1);
+        g.fillRect(-6, 13, 12, 19);
+        c.add(g);
+        break;
+      }
       case "buttons": {
         // Four face buttons in their real colors.
         c.add(scene.add.circle(0, -18, 11, XBOX_BUTTON.Y));
@@ -87,10 +97,19 @@ export class Portal {
   /** Returns true once, the first time Spark steps inside. */
   check(sx: number, sy: number): boolean {
     if (this.entered) return false;
-    if (this.zone.contains(sx, sy)) {
+    if (this.contains(sx, sy)) {
       this.entered = true;
       return true;
     }
     return false;
+  }
+
+  contains(sx: number, sy: number): boolean {
+    return this.zone.contains(sx, sy);
+  }
+
+  destroy(): void {
+    this.container.scene.tweens.killTweensOf(this.container);
+    this.container.destroy(true);
   }
 }

@@ -58,6 +58,16 @@ export class Phase2_GearPen extends PhaseScene {
   private dashUsed = false;
 
   protected buildPhase(): void {
+    this.mode = "catch";
+    this.walls = [];
+    this.gears = [];
+    this.caught = 0;
+    this.spawnTimer = undefined;
+    this.dashPrompt = undefined;
+    this.sheep = [];
+    this.penned = false;
+    this.dashUsed = false;
+
     // Start confined to the channel.
     this.worldBounds = new Phaser.Geom.Rectangle(
       CHANNEL.left,
@@ -76,6 +86,7 @@ export class Phase2_GearPen extends PhaseScene {
     // Spark on the catch line.
     this.spark = new Spark(this, GAME_WIDTH / 2, this.lineY);
     this.spark.setController(new AxisController(this.lineY));
+    this.placeLevelExit(CHANNEL.left + 50, this.lineY);
 
     // Progress: one pip per gear needed.
     this.pips = new ProgressPips(this, GAME_WIDTH / 2, 60, TUNING.gears.unlockCount);
@@ -236,6 +247,6 @@ export class Phase2_GearPen extends PhaseScene {
       });
     }
     this.spark.pop(1);
-    this.goToHub();
+    this.unlockNextExit("P3_DualStick", "dualstick");
   }
 }

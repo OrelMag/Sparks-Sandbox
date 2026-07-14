@@ -64,4 +64,7 @@ export const TUNING = {
 
   /** How gently world edges push Spark back. Zero failure states = no falling. */
   softClampPush: 8, // px/frame nudge back inside bounds
+
+  /** Hold A this long inside a level door to avoid accidental exits. */
+  exitHoldMs: 900,
 } as const;

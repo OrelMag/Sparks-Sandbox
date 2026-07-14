@@ -12,14 +12,16 @@
 import { chromium } from "playwright";
 import { mkdirSync } from "node:fs";
 
-const scene = process.argv[2] ?? "phase1";
+const requested = process.argv[2] ?? "phase1";
+const progression = requested === "progression";
+const scene = progression ? "phase1" : requested;
 const outDir = process.argv[3] ?? "scratch-shots";
 // Defaults to Vite's dev port; override with SMOKE_BASE for a different port.
 const BASE = process.env.SMOKE_BASE ?? "http://localhost:5173";
 mkdirSync(outDir, { recursive: true });
 
 const KEY_SEQUENCES = {
-  phase1: ["Space", "KeyK", "KeyL", "KeyI", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"],
+  phase1: ["Space", "KeyK", "KeyL", "KeyI", "KeyT", "KeyG", "KeyR", "KeyY"],
   phase2: ["KeyA", "KeyD", "KeyA", "KeyD", "KeyA", "KeyD"],
   phase2a: ["KeyA", "KeyD", "KeyA", "KeyD"],
   phase2b: ["KeyW", "KeyD", "KeyS", "KeyA", "KeyF"],
@@ -59,18 +61,44 @@ for (const key of seq) {
   await page.keyboard.up(key);
   await page.waitForTimeout(180);
 }
-await page.waitForTimeout(600);
-await page.screenshot({ path: `${outDir}/${scene}-after-input.png` });
 
-// Let it sit idle long enough for the ghost-hint escalation to kick in.
-await page.waitForTimeout(13000);
-await page.screenshot({ path: `${outDir}/${scene}-idle-hint.png` });
+if (progression) {
+  const activeScene = () =>
+    page.evaluate(() =>
+      window.__game?.scene
+        .getScenes(true)
+        .map((s) => s.scene.key)
+        .find((key) => key !== "ObservationMode")
+    );
+
+  await page.waitForTimeout(1000);
+  if ((await activeScene()) !== "P1_BusyBox") {
+    errors.push("progression: short A press left Phase 1");
+  }
+  await page.screenshot({ path: `${outDir}/progression-ready.png` });
+
+  await page.keyboard.down("Space");
+  await page.waitForTimeout(1100);
+  await page.keyboard.up("Space");
+  await page.waitForTimeout(500);
+  if ((await activeScene()) !== "P2_GearPen") {
+    errors.push("progression: completed Phase 1 did not advance to Phase 2 after holding A");
+  }
+  await page.screenshot({ path: `${outDir}/progression-after-exit.png` });
+} else {
+  await page.waitForTimeout(600);
+  await page.screenshot({ path: `${outDir}/${scene}-after-input.png` });
+
+  // Let it sit idle long enough for the ghost-hint escalation to kick in.
+  await page.waitForTimeout(13000);
+  await page.screenshot({ path: `${outDir}/${scene}-idle-hint.png` });
+}
 
 await browser.close();
 
 if (errors.length) {
-  console.error(`SMOKE FAIL (${scene}):`);
+  console.error(`SMOKE FAIL (${requested}):`);
   for (const e of errors) console.error("  " + e);
   process.exit(1);
 }
-console.log(`SMOKE OK (${scene}): no console/page errors; screenshots in ${outDir}/`);
+console.log(`SMOKE OK (${requested}): no console/page errors; screenshots in ${outDir}/`);

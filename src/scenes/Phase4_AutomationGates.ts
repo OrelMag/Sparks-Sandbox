@@ -33,6 +33,10 @@ export class Phase4_AutomationGates extends PhaseScene {
   private celebrated = false;
 
   protected buildPhase(): void {
+    this.rooms = [];
+    this.solvedCount = 0;
+    this.celebrated = false;
+
     this.add
       .rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH - 40, GAME_HEIGHT - 40, COLOR.floor, 0.18)
       .setStrokeStyle(4, COLOR.metalDark)
@@ -41,6 +45,7 @@ export class Phase4_AutomationGates extends PhaseScene {
     // Spark starts bottom-left with the puzzle controller (roam + brace + push).
     this.spark = new Spark(this, 120, GAME_HEIGHT - 90);
     this.spark.setController(new PuzzleController());
+    this.placeLevelExit(GAME_WIDTH - 90, GAME_HEIGHT - 110);
 
     const tier = this.services.save.tier;
     const cfg: RoomConfig = { scene: this, spark: this.spark, tier };
@@ -101,6 +106,6 @@ export class Phase4_AutomationGates extends PhaseScene {
       });
     }
     this.spark.pop(1);
-    this.goToHub();
+    this.unlockNextExit("Hub", "home");
   }
 }

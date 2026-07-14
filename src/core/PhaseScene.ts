@@ -20,7 +20,9 @@ import { GhostHint } from "@/ui/GhostHint";
 import { InteractableManager } from "@/systems/InteractableManager";
 import type { ManagedProp } from "@/systems/Interactable";
 import { Spark } from "@/entities/Spark";
-import { ALL_ACTIONS } from "@/input/Action";
+import { Portal, type PortalIcon } from "@/entities/Portal";
+import { ALL_ACTIONS, Action } from "@/input/Action";
+import { createPrompt, type Prompt } from "@/ui/Prompt";
 import { COLOR } from "@/config/Palette";
 import { GAME_WIDTH, GAME_HEIGHT } from "@/config/GameConfig";
 import { TUNING } from "@/config/Tuning";
@@ -30,15 +32,29 @@ export abstract class PhaseScene extends Phaser.Scene {
   protected spark?: Spark;
   protected idle = 0;
   protected props = new InteractableManager();
+  protected transitioning = false;
 
   private hints: GhostHint[] = [];
   private lastTime = 0;
+  private levelExit?: { portal: Portal; prompt: Prompt; destination: string };
+  private exitPosition?: { x: number; y: number };
+  private exitHold?: Phaser.Time.TimerEvent;
+  private exitReady = false;
 
   /** World rectangle Spark is soft-clamped inside. Phases may shrink it. */
   protected worldBounds = new Phaser.Geom.Rectangle(40, 40, GAME_WIDTH - 80, GAME_HEIGHT - 80);
 
   create(): void {
     this.services = getServices(this);
+    this.idle = 0;
+    this.props = new InteractableManager();
+    this.transitioning = false;
+    this.hints = [];
+    this.lastTime = 0;
+    this.levelExit = undefined;
+    this.exitPosition = undefined;
+    this.exitHold = undefined;
+    this.exitReady = false;
     this.drawBackground();
     this.buildPhase();
   }
@@ -53,7 +69,7 @@ export abstract class PhaseScene extends Phaser.Scene {
     const dt = this.lastTime ? Math.min((time - this.lastTime) / 1000, 0.05) : 0;
     this.lastTime = time;
 
-    const { input, skills, save } = this.services;
+    const { input, skills } = this.services;
     input.update();
 
     // Idle clock: any button, or a meaningfully deflected stick, counts as
@@ -86,8 +102,8 @@ export abstract class PhaseScene extends Phaser.Scene {
     // Update interactables (props/switches).
     this.props.update({ spark: this.spark, services: this.services, dt });
 
-    void save; // reserved for phase-open persistence in subclasses
     this.onUpdate(dt);
+    this.updateLevelExit();
   }
 
   /** Register a hint so the base loop escalates it while idle. */
@@ -95,17 +111,27 @@ export abstract class PhaseScene extends Phaser.Scene {
     this.hints.push(hint);
   }
 
-  /**
-   * Fade back to the hub after a beat. Phases call this once complete so the
-   * child is returned to the playground to pick the next door — never a "you
-   * win" screen, just a gentle trip home.
-   */
-  protected goToHub(delayMs = 2200): void {
-    this.time.delayedCall(delayMs, () => {
-      this.cameras.main.fadeOut(400, 15, 16, 32);
-      this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
-        this.scene.start("Hub");
-      });
+  /** Place the always-available wordless door back to the hub. */
+  protected placeLevelExit(x: number, y: number): void {
+    this.exitPosition = { x, y };
+    this.setLevelExit("Hub", "home", false);
+  }
+
+  /** Replace the hub exit with the door to the next curriculum phase. */
+  protected unlockNextExit(destination: string, icon: PortalIcon): void {
+    this.setLevelExit(destination, icon, true);
+  }
+
+  /** Shared wordless transition for hub portals and level exits. */
+  protected transitionTo(sceneKey: string): void {
+    if (this.transitioning) return;
+    this.transitioning = true;
+    this.cancelExitHold();
+    this.services.audio.play("open");
+    this.spark?.pop(0.8);
+    this.cameras.main.fadeOut(350, 15, 16, 32);
+    this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
+      this.scene.start(sceneKey);
     });
   }
 
@@ -162,6 +188,47 @@ export abstract class PhaseScene extends Phaser.Scene {
       });
     };
     return { container, dispose };
+  }
+
+  private setLevelExit(destination: string, icon: PortalIcon, drawAttention: boolean): void {
+    if (!this.exitPosition) return;
+    this.cancelExitHold();
+    this.levelExit?.portal.destroy();
+    if (this.levelExit) this.tweens.killTweensOf(this.levelExit.prompt.container);
+    this.levelExit?.prompt.destroy();
+
+    const { x, y } = this.exitPosition;
+    const portal = new Portal(this, x, y, icon, destination);
+    const prompt = createPrompt(this, Action.JUMP).setPosition(x, y - 112).setScale(0.75);
+    if (drawAttention) prompt.pulse();
+    this.levelExit = { portal, prompt, destination };
+  }
+
+  private updateLevelExit(): void {
+    if (!this.spark || !this.levelExit || this.transitioning) return;
+    const active =
+      this.levelExit.portal.contains(this.spark.x, this.spark.y) &&
+      this.services.input.isDown(Action.JUMP);
+
+    if (!active) {
+      this.cancelExitHold();
+      return;
+    }
+    if (this.exitReady) {
+      this.transitionTo(this.levelExit.destination);
+      return;
+    }
+    if (this.exitHold) return;
+
+    this.levelExit.prompt.depress();
+    this.services.rumble.hold(TUNING.exitHoldMs);
+    this.exitHold = this.time.delayedCall(TUNING.exitHoldMs, () => (this.exitReady = true));
+  }
+
+  private cancelExitHold(): void {
+    this.exitHold?.remove(false);
+    this.exitHold = undefined;
+    this.exitReady = false;
   }
 
   private drawBackground(): void {
