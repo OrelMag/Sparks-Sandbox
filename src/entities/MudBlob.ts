@@ -19,8 +19,8 @@ export class MudBlob {
 
   constructor(
     private scene: Phaser.Scene,
-    public x: number,
-    public y: number
+    x: number,
+    y: number
   ) {
     this.blob = scene.add.circle(0, 0, this.radius, COLOR.mud);
     this.blob.setStrokeStyle(3, 0x6f5539);
@@ -28,6 +28,14 @@ export class MudBlob {
     const lump1 = scene.add.circle(-14, 12, 12, COLOR.mud).setStrokeStyle(3, 0x6f5539);
     const lump2 = scene.add.circle(16, 10, 10, COLOR.mud).setStrokeStyle(3, 0x6f5539);
     this.container = scene.add.container(x, y, [lump1, lump2, this.blob]).setDepth(12);
+  }
+
+  get x(): number {
+    return this.container.x;
+  }
+
+  get y(): number {
+    return this.container.y;
   }
 
   get isClean(): boolean {

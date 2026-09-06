@@ -27,7 +27,7 @@ phases by driving Spark into a door in the hub — there is no menu to read.
 |-------|----------------|-----------|-----------------|
 | 1 · Busy-Box | four colored buttons | press A / B / X / Y, use the d-pad | jump, cancel, menus |
 | 2 · Gear Pen | a gear | tilt the left stick — first side-to-side, then all around, then click to dash | move, sprint |
-| 3 · Fire Truck | two sticks | drive with the left stick **and** aim with the right, then pull RT to spray | move + aim + fire |
+| 3 · Fire Truck | two sticks | drive and spray through three arenas: static targets, moving lanes, then crossing lanes | move + aim + fire |
 | 4 · Automation | meshed gears | button chords: hold LT + press A, and hold both bumpers at once | modifiers, two-handed inputs |
 
 On-screen prompts always match the controller: a green **A** on screen is the green

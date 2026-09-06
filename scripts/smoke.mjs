@@ -26,8 +26,16 @@ const KEY_SEQUENCES = {
   phase2a: ["KeyA", "KeyD", "KeyA", "KeyD"],
   phase2b: ["KeyW", "KeyD", "KeyS", "KeyA", "KeyF"],
   phase3: ["KeyW", "ArrowRight", "Enter", "KeyD", "ArrowUp", "Enter"],
+  phase3b: ["KeyW", "ArrowRight", "Enter", "KeyD", "ArrowUp", "Enter"],
+  phase3c: ["KeyW", "ArrowRight", "Enter", "KeyD", "ArrowUp", "Enter"],
   phase4: ["KeyW", "KeyD", "Space", "ShiftLeft", "KeyQ", "KeyE"],
   hub: ["KeyD", "KeyA", "KeyW", "KeyS"],
+};
+
+const EXPECTED_SCENES = {
+  phase3: "P3_DualStick",
+  phase3b: "P3_MovingTargets",
+  phase3c: "P3_CrossingStreams",
 };
 
 const errors = [];
@@ -53,6 +61,18 @@ await page.goto(`${BASE}/?scene=${scene}`, { waitUntil: "networkidle" });
 await page.waitForTimeout(1500);
 await page.screenshot({ path: `${outDir}/${scene}-initial.png` });
 
+const activeScene = () =>
+  page.evaluate(() =>
+    window.__game?.scene
+      .getScenes(true)
+      .map((s) => s.scene.key)
+      .find((key) => key !== "ObservationMode")
+  );
+const expectedScene = EXPECTED_SCENES[scene];
+if (expectedScene && (await activeScene()) !== expectedScene) {
+  errors.push(`${scene}: expected ${expectedScene}, got ${await activeScene()}`);
+}
+
 // Drive the scene with the keyboard fallback.
 const seq = KEY_SEQUENCES[scene] ?? ["Space"];
 for (const key of seq) {
@@ -63,14 +83,6 @@ for (const key of seq) {
 }
 
 if (progression) {
-  const activeScene = () =>
-    page.evaluate(() =>
-      window.__game?.scene
-        .getScenes(true)
-        .map((s) => s.scene.key)
-        .find((key) => key !== "ObservationMode")
-    );
-
   await page.waitForTimeout(1000);
   if ((await activeScene()) !== "P1_BusyBox") {
     errors.push("progression: short A press left Phase 1");

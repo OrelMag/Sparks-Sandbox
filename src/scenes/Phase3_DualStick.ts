@@ -23,10 +23,11 @@ import { GhostHint } from "@/ui/GhostHint";
 import { Action } from "@/input/Action";
 import { COLOR } from "@/config/Palette";
 import { GAME_WIDTH, GAME_HEIGHT } from "@/config/GameConfig";
+import { LEVELS, type DualStickLevel } from "@/config/Phase3Levels";
 
 export class Phase3_DualStick extends PhaseScene {
-  constructor() {
-    super("P3_DualStick");
+  constructor(private level: DualStickLevel = LEVELS[0]) {
+    super(level.key);
   }
 
   private cannon!: WaterCannon;
@@ -58,15 +59,31 @@ export class Phase3_DualStick extends PhaseScene {
     this.placeLevelExit(90, GAME_HEIGHT / 2);
     this.cannon = new WaterCannon(this);
 
-    // Muddy objects to wash, scattered around the arena.
-    const spots = [
-      [220, 180],
-      [1050, 180],
-      [180, 560],
-      [1080, 560],
-      [640, 150],
-    ] as const;
-    for (const [x, y] of spots) this.blobs.push(new MudBlob(this, x, y));
+    // Later arenas move targets along visible tracks, forcing drive + aim
+    // tracking. One pass builds both the blob and its track/tween together so
+    // the two can't drift out of sync with each other.
+    const tracks = this.add.graphics().setDepth(1);
+    tracks.lineStyle(3, COLOR.waterDark, 0.25);
+    for (const [x, y, toX, toY, duration] of this.level.targets) {
+      const blob = new MudBlob(this, x, y);
+      this.blobs.push(blob);
+      if (!duration || toX === undefined || toY === undefined) continue;
+
+      tracks.beginPath();
+      tracks.moveTo(x, y);
+      tracks.lineTo(toX, toY);
+      tracks.strokePath();
+
+      this.tweens.add({
+        targets: blob.container,
+        x: toX,
+        y: toY,
+        duration,
+        yoyo: true,
+        repeat: -1,
+        ease: "Sine.inOut",
+      });
+    }
 
     this.pips = new ProgressPips(this, GAME_WIDTH / 2, 40, this.blobs.length, COLOR.water);
 
@@ -152,6 +169,16 @@ export class Phase3_DualStick extends PhaseScene {
       });
     }
     this.spark.pop(1);
-    this.unlockNextExit("P4_AutomationGates", "gears");
+    this.unlockNextExit(this.level.nextScene, this.level.nextIcon);
   }
 }
+
+/**
+ * Three pre-configured instances — NOT a bare class reference like every other
+ * scene in main.ts's scene list. Phaser instantiates a class reference itself
+ * with zero arguments, which can't hand each one a different LEVELS entry, so
+ * this file constructs and exports the three configured scenes directly. This
+ * is the one place scene registration looks different on purpose; a future
+ * phase should still prefer a bare class unless it needs the same trick.
+ */
+export const PHASE3_SCENES = LEVELS.map((level) => new Phase3_DualStick(level));

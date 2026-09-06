@@ -17,7 +17,7 @@ import { DebugInputScene } from "@/scenes/DebugInputScene";
 import { HubScene } from "@/scenes/HubScene";
 import { Phase1_BusyBox } from "@/scenes/Phase1_BusyBox";
 import { Phase2_GearPen } from "@/scenes/Phase2_GearPen";
-import { Phase3_DualStick } from "@/scenes/Phase3_DualStick";
+import { PHASE3_SCENES } from "@/scenes/Phase3_DualStick";
 import { Phase4_AutomationGates } from "@/scenes/Phase4_AutomationGates";
 import { DebugOverlay } from "@/ui/DebugOverlay";
 
@@ -30,6 +30,8 @@ const SCENE_ALIASES: Record<string, string> = {
   phase2a: "P2_GearPen",
   phase2b: "P2_GearPen",
   phase3: "P3_DualStick",
+  phase3b: "P3_MovingTargets",
+  phase3c: "P3_CrossingStreams",
   phase4: "P4_AutomationGates",
 };
 
@@ -58,7 +60,7 @@ const scenes: Phaser.Types.Scenes.SceneType[] = [
   HubScene,
   Phase1_BusyBox,
   Phase2_GearPen,
-  Phase3_DualStick,
+  ...PHASE3_SCENES, // three pre-built instances, one per level — see Phase3_DualStick.ts
   Phase4_AutomationGates,
   DebugInputScene,
   DebugOverlay,
