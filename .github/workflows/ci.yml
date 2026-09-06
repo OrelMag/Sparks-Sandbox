@@ -1,0 +1,26 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  check:
+    name: typecheck + guard + test + build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      # typecheck, the golden-rule guard, and the vitest suite — see CLAUDE.md
+      # "The three golden rules" for why `guard` is non-negotiable here.
+      - run: npm run check
+
+      - run: npm run build

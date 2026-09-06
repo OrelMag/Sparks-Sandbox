@@ -1,14 +1,14 @@
 /**
- * InteractableManager.ts — a collection that updates interactables and exposes
- * their hints for the scene's idle-escalation loop.
+ * InteractableManager.ts — a collection that updates every prop in a phase and
+ * tracks how many have been discovered.
  *
- * Thin on purpose: it keeps the "update all props" and "register all hints"
- * bookkeeping out of each scene, so a phase just does `this.props.add(new
- * Spring(...))` and the base loop handles the rest.
+ * Thin on purpose: it keeps "update all props" bookkeeping out of each scene.
+ * Hint registration is a separate concern, handled by PhaseScene.addInteractable
+ * (which registers `item.hint` with the idle clock directly) — a phase just does
+ * `this.addInteractable(new Spring(...))` and the base loop handles the rest.
  */
 
 import type { ManagedProp, InteractContext } from "./Interactable";
-import type { GhostHint } from "@/ui/GhostHint";
 
 export class InteractableManager {
   private items: ManagedProp[] = [];
@@ -20,11 +20,6 @@ export class InteractableManager {
 
   update(ctx: InteractContext): void {
     for (const it of this.items) it.update(ctx);
-  }
-
-  /** All hints, for the scene to register with its idle clock. */
-  hints(): GhostHint[] {
-    return this.items.map((i) => i.hint);
   }
 
   /** True once every prop has been discovered — a wordless "phase explored". */
